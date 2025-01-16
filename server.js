@@ -1,21 +1,21 @@
 require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
-const authRoutes = require('./routes/authRoutes');
-
-console.log('JWT_SECRET:', process.env.JWT_SECRET);
-console.log('PORT:', process.env.PORT);
-
+const authRoutes = require('./src/routes/authRoutes');
 
 const app = express();
+
+// Middleware สำหรับแปลง JSON
 app.use(bodyParser.json());
 
+// Middleware สำหรับ Log Requests
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.url} - ${JSON.stringify(req.body)}`);
   next();
 });
 
-app.use('/api/auth', authRoutes);
+// ใช้งาน Routes ที่ `/api/auth`
+app.use('/det', authRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

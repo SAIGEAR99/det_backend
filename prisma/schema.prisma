@@ -1,14 +1,142 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
+}
+
+model comments {
+  comment_id BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  post_id    BigInt?
+  user_id    Int?
+  content    String   @db.Text
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  posts      posts?   @relation(fields: [post_id], references: [post_id], onDelete: Cascade, onUpdate: Restrict, map: "fk_comment_post")
+  users      users?   @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: Restrict, map: "fk_comment_user")
+
+  @@index([post_id], map: "fk_comment_post")
+  @@index([user_id], map: "fk_comment_user")
+}
+
+model events {
+  event_id   BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  event_name String   @db.VarChar(100)
+  event_date DateTime @db.Date
+  group_id   Int?
+  created_by Int?
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  users      users?   @relation(fields: [created_by], references: [user_id], onDelete: Cascade, onUpdate: Restrict, map: "fk_event_creator")
+  groups     groups?  @relation(fields: [group_id], references: [group_id], onDelete: Cascade, onUpdate: Restrict, map: "fk_event_group")
+
+  @@index([created_by], map: "fk_event_creator")
+  @@index([group_id], map: "fk_event_group")
+}
+
+model follows {
+  follow_id                         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  follower_id                       Int?
+  following_id                      Int?
+  created_at                        DateTime @default(now()) @db.Timestamp(0)
+  users_follows_follower_idTousers  users?   @relation("follows_follower_idTousers", fields: [follower_id], references: [user_id], onDelete: Cascade, onUpdate: Restrict, map: "follows_ibfk_1")
+  users_follows_following_idTousers users?   @relation("follows_following_idTousers", fields: [following_id], references: [user_id], onDelete: Cascade, onUpdate: Restrict, map: "follows_ibfk_2")
+
+  @@index([follower_id], map: "follower_id")
+  @@index([following_id], map: "following_id")
+}
+
+model groups {
+  group_id    Int      @id @default(autoincrement())
+  group_name  String   @db.VarChar(100)
+  description String?  @db.Text
+  created_by  Int?
+  created_at  DateTime @default(now()) @db.Timestamp(0)
+  events      events[]
+  users       users?   @relation(fields: [created_by], references: [user_id], onDelete: Cascade, onUpdate: Restrict, map: "fk_created_by")
+  posts       posts[]
+
+  @@index([created_by], map: "fk_created_by")
+}
+
+model likes {
+  like_id    BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id    Int?
+  post_id    BigInt?
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  users      users?   @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: Restrict, map: "likes_ibfk_1")
+  posts      posts?   @relation(fields: [post_id], references: [post_id], onDelete: Cascade, onUpdate: Restrict, map: "likes_ibfk_2")
+
+  @@index([post_id], map: "post_id")
+  @@index([user_id], map: "user_id")
+}
+
+model messages {
+  message_id                        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  sender_id                         Int?
+  receiver_id                       Int?
+  content                           String   @db.Text
+  created_at                        DateTime @default(now()) @db.Timestamp(0)
+  users_messages_sender_idTousers   users?   @relation("messages_sender_idTousers", fields: [sender_id], references: [user_id], onDelete: Cascade, onUpdate: Restrict, map: "messages_ibfk_1")
+  users_messages_receiver_idTousers users?   @relation("messages_receiver_idTousers", fields: [receiver_id], references: [user_id], onDelete: Cascade, onUpdate: Restrict, map: "messages_ibfk_2")
+
+  @@index([receiver_id], map: "receiver_id")
+  @@index([sender_id], map: "sender_id")
+}
+
+model posts {
+  post_id    BigInt     @id @default(autoincrement())
+  user_id    Int?
+  group_id   Int?
+  content    String     @db.Text
+  image_url  String?    @db.VarChar(255)
+  like_count Int?       @default(0)
+  created_at DateTime   @default(now()) @db.Timestamp(0)
+  comments   comments[]
+  likes      likes[]
+  groups     groups?    @relation(fields: [group_id], references: [group_id], onDelete: Cascade, onUpdate: Restrict, map: "fk_post_group")
+  users      users?     @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: Restrict, map: "fk_post_user")
+  posttags   posttags[]
+
+  @@index([group_id], map: "fk_post_group")
+  @@index([user_id], map: "fk_post_user")
+}
+
+model posttags {
+  post_tag_id BigInt  @id @default(autoincrement()) @db.UnsignedBigInt
+  post_id     BigInt?
+  tag_id      BigInt?
+  posts       posts?  @relation(fields: [post_id], references: [post_id], onDelete: Cascade, onUpdate: Restrict, map: "posttags_ibfk_1")
+  tags        tags?   @relation(fields: [tag_id], references: [tag_id], onDelete: Cascade, onUpdate: Restrict, map: "posttags_ibfk_2")
+
+  @@index([post_id], map: "post_id")
+  @@index([tag_id], map: "tag_id")
+}
+
+model tags {
+  tag_id   BigInt     @id @default(autoincrement())
+  tag_name String     @unique(map: "tag_name") @db.VarChar(50)
+  posttags posttags[]
+}
+
+model users {
+  user_id                              Int        @id @default(autoincrement())
+  username                             String     @unique(map: "username") @db.VarChar(50)
+  email                                String     @unique(map: "email") @db.VarChar(100)
+  password_hash                        String     @db.VarChar(255)
+  full_name                            String?    @db.VarChar(100)
+  profile_picture                      String?    @db.VarChar(255)
+  bio                                  String?    @db.Text
+  created_at                           DateTime   @default(now()) @db.Timestamp(0)
+  link                                 String?    @db.VarChar(255)
+  profile_img                          String?    @db.VarChar(255)
+  comments                             comments[]
+  events                               events[]
+  follows_follows_follower_idTousers   follows[]  @relation("follows_follower_idTousers")
+  follows_follows_following_idTousers  follows[]  @relation("follows_following_idTousers")
+  groups                               groups[]
+  likes                                likes[]
+  messages_messages_sender_idTousers   messages[] @relation("messages_sender_idTousers")
+  messages_messages_receiver_idTousers messages[] @relation("messages_receiver_idTousers")
+  posts                                posts[]
 }
