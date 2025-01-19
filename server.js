@@ -5,19 +5,44 @@ const authRoutes = require('./src/routes/authRoutes');
 
 const app = express();
 
-// Middleware สำหรับแปลง JSON
 app.use(bodyParser.json());
-
-// Middleware สำหรับ Log Requests
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url} - ${JSON.stringify(req.body)}`);
+  console.log(`Request received: ${req.method} ${req.url}`);
   next();
 });
 
-// ใช้งาน Routes ที่ `/api/auth`
 app.use('/det', authRoutes);
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+
+// สร้างเซิร์ฟเวอร์และเพิ่มการจัดการพอร์ต
+const server = app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+});
+
+// จัดการข้อผิดพลาดกรณีพอร์ตถูกใช้งาน
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use.`);
+    process.exit(1); // ออกจากกระบวนการ
+  } else {
+    console.error('Unexpected error:', err);
+  }
+});
+
+// จัดการการปิดเซิร์ฟเวอร์เมื่อรับสัญญาณ SIGINT หรือ SIGTERM
+process.on('SIGINT', () => {
+  console.log('Closing server...');
+  server.close(() => {
+    console.log('Server closed.');
+    process.exit(0);
+  });
+});
+
+process.on('SIGTERM', () => {
+  console.log('Closing server...');
+  server.close(() => {
+    console.log('Server closed.');
+    process.exit(0);
+  });
 });

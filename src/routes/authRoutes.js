@@ -3,6 +3,7 @@ const router = express.Router();
 const authController = require('../controllers/authController');
 const user = require('../controllers/user');
 const img = require('../middleware/img');
+const post = require('../controllers/post');
 
 
 router.post('/login', authController.login);
@@ -16,6 +17,12 @@ router.post('/user', authController.verifyToken , user.fetch);
 router.post('/user/edit_profile', authController.verifyToken , user.edit_profile);
 
 router.post('/img/upload_profile', authController.verifyToken , img.upload_profile);
+router.get('/img/profile/:user_id', img.profile);
+router.get('/img/post/:post_id', img.post_img);
+
+router.get('/img/image/:id', img.image);
+
+router.post('/post/create', authController.verifyToken , post.create);
 
 
 module.exports = router;
