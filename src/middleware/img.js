@@ -112,43 +112,8 @@ exports.profile = async (req, res) => {
   }
 };
 
-exports.post_img = async (req, res) => {
-  const { post_id } = req.params;
-
-  if (!post_id) {
-    return res.status(400).json({ error: 'post_id is required' });
-  }
-
-  try {
-    // ค้นหารายการภาพที่เชื่อมโยงกับ post_id
-    const images = await prisma.image.findMany({
-      where: { post_id: BigInt(post_id) },
-      select: {
-        id: true,
-        img_path: true, // ดึงเฉพาะ path ของรูปภาพ
-      },
-    });
-
-    if (images.length === 0) {
-      return res.status(404).json({ error: 'No images found for this post' });
-    }
-
-    // ส่งคืนรายการภาพ
-    res.status(200).json({
-      post_id: post_id,
-      images: images.map((img) => ({
-        id: img.id,
-        url: `${req.protocol}://${req.get('host')}/det/img/image/${img.id}`, // เปลี่ยน URL
-      })),
-    });
-  } catch (error) {
-    console.error('Error fetching images:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-};
-
 exports.image = async (req, res) => {
-  const { id } = req.params; // ใช้ id จาก table `image`
+  const { id } = req.params; 
   console.log('Image ID:', id);
 
   if (!id) {
@@ -156,7 +121,7 @@ exports.image = async (req, res) => {
   }
 
   try {
-    // ดึงข้อมูลรูปภาพจาก table `image`
+    
     const image = await prisma.image.findUnique({
       where: { id: parseInt(id, 10) },
     });
@@ -165,11 +130,11 @@ exports.image = async (req, res) => {
       return res.status(404).send({ message: 'Image not found' });
     }
 
-    const imagePath = path.join(__dirname, '../../public', image.img_path); // path จาก img_path ในฐานข้อมูล
+    const imagePath = path.join(__dirname, '../../public', image.img_path);
 
     console.log('Serving image from path:', imagePath);
 
-    // ส่งคืนไฟล์ภาพ
+
     return res.sendFile(imagePath);
   } catch (err) {
     console.error('Error fetching image:', err);

@@ -18,11 +18,16 @@ router.post('/user/edit_profile', authController.verifyToken , user.edit_profile
 
 router.post('/img/upload_profile', authController.verifyToken , img.upload_profile);
 router.get('/img/profile/:user_id', img.profile);
-router.get('/img/post/:post_id', img.post_img);
-
 router.get('/img/image/:id', img.image);
 
 router.post('/post/create', authController.verifyToken , post.create);
+router.get('/post/getAllPosts', post.getAllPosts);
+router.post('/post/delete', post.deletePost);
+router.post('/post/report', post.reportPost);
+router.post('/post/like', post.toggleLike);
+
+
+
 
 
 module.exports = router;
