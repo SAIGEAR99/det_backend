@@ -5,77 +5,85 @@ const fs = require('fs');
 const sharp = require('sharp');
 const { PrismaClient } = require('@prisma/client');
 
+const prisma = new PrismaClient();
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const dir = path.join(__dirname, '../public/img/');
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+    const dir = path.join(process.cwd(), 'public/img');
+    try {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      cb(null, dir);
+    } catch (err) {
+      console.error('Error creating directory:', err);
+      cb(err);
     }
-    cb(null, dir);
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname));
   },
 });
 
-const upload = multer({ storage: storage });
-const prisma = new PrismaClient();
+const upload = multer({ storage: storage }).single('image'); 
 
-exports.upload_profile = async (req, res) => {
-  const { user_id } = req.query; 
-
-  if (!user_id) {
-    return res.status(400).send({ message: 'User ID is required' });
-  }
-
-  try {
-
-    const user = await prisma.users.findUnique({
-      where: { id: parseInt(user_id, 10) }, 
-    });
-
-    if (!user) {
-      return res.status(404).send({ message: 'User not found' });
+exports.upload_profile = (req, res) => {
+  upload(req, res, async (err) => {
+    if (err) {
+      console.error('Error handling file upload:', err);
+      return res.status(500).json({ message: 'File upload failed' });
     }
 
-    if (!req.file) {
-      return res.status(400).send({ message: 'No file uploaded' });
+    try {
+      console.log('Request Body:', req.body);
+      console.log('Uploaded File:', req.file);
+
+      if (!req.body.user_id) {
+        return res.status(400).json({ message: 'User ID is required' });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+      }
+
+      const { user_id } = req.body;
+
+      const uploadedFilePath = req.file.path; 
+      const processedFilePath = path.join(process.cwd(), 'public/img/processed', req.file.filename);
+
+      const processedDir = path.dirname(processedFilePath);
+      if (!fs.existsSync(processedDir)) {
+        fs.mkdirSync(processedDir, { recursive: true });
+      }
+
+      await sharp(uploadedFilePath)
+        .resize(100, 100)
+        .toFile(processedFilePath);
+
+      try {
+        fs.unlinkSync(uploadedFilePath);
+      } catch (err) {
+        console.error('Error deleting original uploaded file:', err);
+      }
+
+      const updatedUser = await prisma.users.update({
+        where: { user_id: parseInt(user_id, 10) },
+        data: {
+          profile_img: `/img/processed/${req.file.filename}`,
+        },
+      });
+
+      res.status(200).json({
+        message: 'Profile picture updated successfully',
+        user: updatedUser,
+      });
+    } catch (error) {
+      console.error('Error processing profile upload:', error);
+      res.status(500).json({ message: 'Error processing profile upload' });
     }
-
-    const uploadedFilePath = path.join(__dirname, '../public/img/', req.file.filename);
-    const processedFilePath = path.join(__dirname, '../public/img/processed/', req.file.filename);
-
-
-    const processedDir = path.dirname(processedFilePath);
-    if (!fs.existsSync(processedDir)) {
-      fs.mkdirSync(processedDir, { recursive: true });
-    }
-
-    await sharp(uploadedFilePath)
-      .resize(300, 300) 
-      .toFile(processedFilePath);
-
-
-    fs.unlinkSync(uploadedFilePath);
-
-
-    const updatedUser = await prisma.users.update({
-      where: { id: parseInt(user_id, 10) },
-      data: {
-        profile_picture: `/img/processed/${req.file.filename}`,
-      },
-    });
-
-    res.status(200).send({
-      message: 'File uploaded and processed successfully',
-      user: updatedUser,
-    });
-  } catch (err) {
-    console.error('Error processing image: ', err);
-    res.status(500).send({ message: 'Error processing image' });
-  }
+  });
 };
+
 
 exports.profile = async (req, res) => {
   const { user_id } = req.params;

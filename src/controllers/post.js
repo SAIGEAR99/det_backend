@@ -282,26 +282,37 @@ exports.toggleLike = async (req, res) => {
     let isLiked = false;
 
     if (existingLike) {
-
+      // Unlike the post
       await prisma.likes.delete({
         where: { like_id: existingLike.like_id },
       });
     } else {
-
+      // Like the post
       await prisma.likes.create({
         data: {
           user_id: parseInt(user_id),
           post_id: BigInt(post_id),
         },
       });
+
       isLiked = true;
+
+      // สร้างการแจ้งเตือน
+      if (postExists.user_id !== parseInt(user_id)) {
+        await prisma.notifications.create({
+          data: {
+            user_id: postExists.user_id, // เจ้าของโพสต์
+            sender_id: parseInt(user_id), // ผู้กดไลค์
+            post_id: BigInt(post_id),
+            message: 'ชอบโพสต์ของคุณ',
+          },
+        });
+      }
     }
 
- 
     const likeCount = await prisma.likes.count({
       where: { post_id: BigInt(post_id) },
     });
-
 
     return res.status(200).json({ isLiked, likeCount });
   } catch (error) {

@@ -4,6 +4,8 @@ const authController = require('../controllers/authController');
 const user = require('../controllers/user');
 const img = require('../middleware/img');
 const post = require('../controllers/post');
+const search = require('../controllers/search');
+const notification = require('../controllers/notification');
 
 
 router.post('/login', authController.login);
@@ -25,6 +27,11 @@ router.get('/post/getAllPosts', post.getAllPosts);
 router.post('/post/delete', post.deletePost);
 router.post('/post/report', post.reportPost);
 router.post('/post/like', post.toggleLike);
+
+router.get('/search', search.search);
+
+
+router.get('/notifications', notification.getNotifications);
 
 
 

@@ -44,7 +44,7 @@ exports.edit_profile = async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-  
+
     const updatedUser = await prisma.users.update({
       where: { user_id: parseInt(user_id) },
       data: {
