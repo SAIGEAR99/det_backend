@@ -7,6 +7,7 @@ const post = require('../controllers/post');
 const search = require('../controllers/search');
 const notification = require('../controllers/notification');
 const register = require('../controllers/register');
+const follow = require('../controllers/follow');
 
 
 router.post('/login', authController.login);
@@ -33,9 +34,14 @@ router.post('/post/like', post.toggleLike);
 
 router.get('/search', search.search);
 
+router.get('/search', search.search);
+router.get('/search', search.search);
+
+
+router.get('/follow/status', follow.follow_status);
+router.post('/follow/toggle', follow.follow_toggle);
 
 router.get('/notifications', notification.getNotifications);
-
 
 
 
