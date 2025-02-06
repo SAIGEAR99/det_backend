@@ -15,16 +15,16 @@ app.use('/det', authRoutes);
 
 const PORT = process.env.PORT || 3000;
 
-// สร้างเซิร์ฟเวอร์และเพิ่มการจัดการพอร์ต
+
 const server = app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
 
-// จัดการข้อผิดพลาดกรณีพอร์ตถูกใช้งาน
+
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
     console.error(`Port ${PORT} is already in use.`);
-    process.exit(1); // ออกจากกระบวนการ
+    process.exit(1); 
   } else {
     console.error('Unexpected error:', err);
   }
