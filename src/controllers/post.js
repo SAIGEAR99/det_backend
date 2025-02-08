@@ -157,7 +157,7 @@ exports.create = [
 ];
 
 exports.getAllPosts = async (req, res) => {
-  const userId = parseInt(req.query.user_id);
+  const userId = req.query.user_id ? parseInt(req.query.user_id) : null;
 
   try {
     const posts = await prisma.posts.findMany({
@@ -182,6 +182,11 @@ exports.getAllPosts = async (req, res) => {
             user_id: true,
           },
         },
+        _count: {
+          select: {
+            comments: true, 
+          },
+        },
       },
     });
 
@@ -195,6 +200,7 @@ exports.getAllPosts = async (req, res) => {
         user_id: post.users?.user_id.toString() || null,
         likeCount: post.likes.length,
         isLiked, 
+        commentCount: post._count.comments, 
         images: post.image.map((img) => ({
           id: img.id.toString(),
           url: `${req.protocol}://${req.get('host')}/det/img/image/${img.id}`,
@@ -208,6 +214,7 @@ exports.getAllPosts = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
 
 
 exports.deletePost = async (req, res) => {

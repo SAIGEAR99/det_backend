@@ -8,14 +8,15 @@ const search = require('../controllers/search');
 const notification = require('../controllers/notification');
 const register = require('../controllers/register');
 const follow = require('../controllers/follow');
+const comment = require('../controllers/comment');
 
 
 router.post('/login', authController.login);
 router.post('/register', register.register);
 
 
-router.get('/protected', authController.verifyToken, (req, res) => {
-  res.json({ message: 'You have access to this resource!' });
+router.get('/protected', (req, res) => {
+  res.json({ message: 'test' });
 });
 
 router.post('/user', authController.verifyToken , user.fetch);
@@ -42,6 +43,9 @@ router.get('/follow/status', follow.follow_status);
 router.post('/follow/toggle', follow.follow_toggle);
 
 router.get('/notifications', notification.getNotifications);
+
+router.post('/comment', comment.add_comment);
+router.get('/comment/fetch', comment.fetch_comment);
 
 
 

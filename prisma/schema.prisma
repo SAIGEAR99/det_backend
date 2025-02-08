@@ -20,19 +20,6 @@ model comments {
   @@index([user_id], map: "fk_comment_user")
 }
 
-model events {
-  event_id   BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
-  event_name String   @db.VarChar(100)
-  event_date DateTime @db.Date
-  group_id   Int?
-  created_by Int?
-  created_at DateTime @default(now()) @db.Timestamp(0)
-  users      users?   @relation(fields: [created_by], references: [user_id], onDelete: Cascade, onUpdate: Restrict, map: "fk_event_creator")
-
-  @@index([created_by], map: "fk_event_creator")
-  @@index([group_id], map: "fk_event_group")
-}
-
 model follows {
   follow_id                         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
   follower_id                       Int?
@@ -57,19 +44,6 @@ model likes {
   @@index([user_id], map: "user_id")
 }
 
-model messages {
-  message_id                        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
-  sender_id                         Int?
-  receiver_id                       Int?
-  content                           String   @db.Text
-  created_at                        DateTime @default(now()) @db.Timestamp(0)
-  users_messages_sender_idTousers   users?   @relation("messages_sender_idTousers", fields: [sender_id], references: [user_id], onDelete: Cascade, onUpdate: Restrict, map: "messages_ibfk_1")
-  users_messages_receiver_idTousers users?   @relation("messages_receiver_idTousers", fields: [receiver_id], references: [user_id], onDelete: Cascade, onUpdate: Restrict, map: "messages_ibfk_2")
-
-  @@index([receiver_id], map: "receiver_id")
-  @@index([sender_id], map: "sender_id")
-}
-
 model posts {
   post_id       BigInt          @id @default(autoincrement())
   user_id       Int?
@@ -81,26 +55,8 @@ model posts {
   likes         likes[]
   notifications notifications[]
   users         users?          @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: Restrict, map: "fk_post_user")
-  posttags      posttags[]
 
   @@index([user_id], map: "fk_post_user")
-}
-
-model posttags {
-  post_tag_id BigInt  @id @default(autoincrement()) @db.UnsignedBigInt
-  post_id     BigInt?
-  tag_id      BigInt?
-  posts       posts?  @relation(fields: [post_id], references: [post_id], onDelete: Cascade, onUpdate: Restrict, map: "posttags_ibfk_1")
-  tags        tags?   @relation(fields: [tag_id], references: [tag_id], onDelete: Cascade, onUpdate: Restrict, map: "posttags_ibfk_2")
-
-  @@index([post_id], map: "post_id")
-  @@index([tag_id], map: "tag_id")
-}
-
-model tags {
-  tag_id   BigInt     @id @default(autoincrement())
-  tag_name String     @unique(map: "tag_name") @db.VarChar(50)
-  posttags posttags[]
 }
 
 model users {
@@ -114,12 +70,9 @@ model users {
   link                                         String?         @db.VarChar(255)
   profile_img                                  String?         @db.VarChar(255)
   comments                                     comments[]
-  events                                       events[]
   follows_follows_follower_idTousers           follows[]       @relation("follows_follower_idTousers")
   follows_follows_following_idTousers          follows[]       @relation("follows_following_idTousers")
   likes                                        likes[]
-  messages_messages_sender_idTousers           messages[]      @relation("messages_sender_idTousers")
-  messages_messages_receiver_idTousers         messages[]      @relation("messages_receiver_idTousers")
   notifications_notifications_sender_idTousers notifications[] @relation("notifications_sender_idTousers")
   notifications_notifications_user_idTousers   notifications[] @relation("notifications_user_idTousers")
   posts                                        posts[]
