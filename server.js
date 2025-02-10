@@ -3,6 +3,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const authRoutes = require('./src/routes/authRoutes');
 const cors = require('cors');
+const { trainModel } = require('./src/middleware/ML');
 
 const app = express();
 
@@ -15,6 +16,8 @@ app.use((req, res, next) => {
 });
 
 app.use('/det', authRoutes);
+
+trainModel();
 
 const PORT = process.env.PORT || 3000;
 

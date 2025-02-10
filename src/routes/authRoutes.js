@@ -9,6 +9,7 @@ const notification = require('../controllers/notification');
 const register = require('../controllers/register');
 const follow = require('../controllers/follow');
 const comment = require('../controllers/comment');
+const repost = require('../controllers/repost');
 
 
 router.post('/login', authController.login);
@@ -46,6 +47,8 @@ router.get('/notifications', notification.getNotifications);
 
 router.post('/comment', comment.add_comment);
 router.get('/comment/fetch', comment.fetch_comment);
+
+router.post('/repost', repost.repost);
 
 
 

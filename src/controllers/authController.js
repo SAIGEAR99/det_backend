@@ -3,6 +3,8 @@ const prisma = new PrismaClient();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
+const JWT_SECRET = process.env.JWT_SECRET;
+
 exports.login = async (req, res) => {
   const { email, password } = req.body;
 
@@ -22,7 +24,7 @@ exports.login = async (req, res) => {
 
     const token = jwt.sign(
       { id: user.user_id, email: user.email },
-      my_super_secret_key,
+      JWT_SECRET,
       { expiresIn: '24h' }
     );
 

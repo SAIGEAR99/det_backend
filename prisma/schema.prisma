@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = "mysql://root:@hardly-guy-thank-ccd.trycloudflare.com:3306/det"
+  url      = env("DATABASE_URL")
 }
 
 model comments {
@@ -45,16 +45,19 @@ model likes {
 }
 
 model posts {
-  post_id       BigInt          @id @default(autoincrement())
-  user_id       Int?
-  content       String          @db.Text
-  like_count    Int?            @default(0)
-  created_at    DateTime        @default(now()) @db.Timestamp(0)
-  comments      comments[]
-  image         image[]
-  likes         likes[]
-  notifications notifications[]
-  users         users?          @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: Restrict, map: "fk_post_user")
+  post_id        BigInt          @id @default(autoincrement())
+  user_id        Int?
+  content        String          @db.Text
+  like_count     Int?            @default(0)
+  repostCount    Int             @default(0)
+  created_at     DateTime        @default(now()) @db.Timestamp(0)
+  last_repost_at DateTime?       @db.Timestamp(0)
+  comments       comments[]
+  image          image[]
+  likes          likes[]
+  notifications  notifications[]
+  users          users?          @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: Restrict, map: "fk_post_user")
+  reposts        reposts[]
 
   @@index([user_id], map: "fk_post_user")
 }
@@ -76,6 +79,7 @@ model users {
   notifications_notifications_sender_idTousers notifications[] @relation("notifications_sender_idTousers")
   notifications_notifications_user_idTousers   notifications[] @relation("notifications_user_idTousers")
   posts                                        posts[]
+  reposts                                      reposts[]
 }
 
 model image {
@@ -103,4 +107,16 @@ model notifications {
   @@index([post_id], map: "idx_post_id")
   @@index([sender_id], map: "idx_sender_id")
   @@index([user_id], map: "idx_user_id")
+}
+
+model reposts {
+  repost_id  BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id    Int?
+  post_id    BigInt?
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+  posts      posts?    @relation(fields: [post_id], references: [post_id], onDelete: Cascade, onUpdate: Restrict, map: "fk_repost_post")
+  users      users?    @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: Restrict, map: "fk_repost_user")
+
+  @@index([post_id], map: "idx_repost_post")
+  @@index([user_id], map: "idx_repost_user")
 }

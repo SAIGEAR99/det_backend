@@ -4,6 +4,7 @@ const path = require('path');
 const sharp = require('sharp');
 const { PrismaClient } = require('@prisma/client');
 const fs = require('fs');
+const { predictPostScore } = require('../middleware/ML');
 
 const prisma = new PrismaClient();
 
@@ -156,14 +157,12 @@ exports.create = [
   },
 ];
 
+
 exports.getAllPosts = async (req, res) => {
   const userId = req.query.user_id ? parseInt(req.query.user_id) : null;
 
   try {
     const posts = await prisma.posts.findMany({
-      orderBy: {
-        created_at: 'desc',
-      },
       include: {
         users: {
           select: {
@@ -182,25 +181,62 @@ exports.getAllPosts = async (req, res) => {
             user_id: true,
           },
         },
+        reposts: { 
+          select: {
+            user_id: true,
+          },
+        },
         _count: {
           select: {
+            likes: true,
             comments: true, 
+            reposts: true, 
           },
         },
       },
+      orderBy: {
+        created_at: 'desc'
+      }
     });
 
-    const response = posts.map((post) => {
+    if (posts.length === 0) {
+      return res.status(200).json([]); 
+    }
+
+    const postsWithScore = posts.map((post) => {
+      let postScore = predictPostScore(post);
+      if (isNaN(postScore)) postScore = 0; 
+
+      console.log(`Post ID: ${post.post_id} -> Score: ${postScore}`);
+
+      return { ...post, postScore };
+    });
+
+
+    const latestPost = postsWithScore.shift(); 
+
+
+    postsWithScore.sort((a, b) => b.postScore - a.postScore);
+
+
+    const sortedPosts = [latestPost, ...postsWithScore];
+
+    const response = sortedPosts.map((post) => {
       const isLiked = post.likes.some((like) => like.user_id === userId);
+      const isReposted = post.reposts.some((repost) => repost.user_id === userId); 
+      
       return {
         post_id: post.post_id.toString(),
         content: post.content,
         created_at: post.created_at,
         username: post.users?.username || 'Unknown',
         user_id: post.users?.user_id.toString() || null,
-        likeCount: post.likes.length,
+        likeCount: post._count.likes,
         isLiked, 
         commentCount: post._count.comments, 
+        repostCount: post._count.reposts, 
+        isReposted,
+        postScore: post.postScore.toFixed(2),
         images: post.image.map((img) => ({
           id: img.id.toString(),
           url: `${req.protocol}://${req.get('host')}/det/img/image/${img.id}`,
@@ -214,7 +250,6 @@ exports.getAllPosts = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
-
 
 
 exports.deletePost = async (req, res) => {
