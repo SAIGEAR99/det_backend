@@ -252,6 +252,97 @@ exports.getAllPosts = async (req, res) => {
 };
 
 
+exports.repost = async (req, res) => {
+  const userId = req.query.user_id ? parseInt(req.query.user_id) : null;
+
+  if (!userId) {
+    return res.status(400).json({ error: "User ID is required" });
+  }
+
+  try {
+    // 📌 ดึงเฉพาะโพสต์ที่ user เคยรีโพสต์ และเรียงตามเวลาที่รีโพสต์ใหม่สุด
+    const repostedPosts = await prisma.reposts.findMany({
+      where: {
+        user_id: userId, 
+      },
+      orderBy: {
+        created_at: 'desc', // ✅ เรียงตามเวลาที่ user รีโพสต์ล่าสุด
+      },
+      include: {
+        posts: {
+          include: {
+            users: {
+              select: {
+                user_id: true,
+                username: true,
+              },
+            },
+            image: {
+              select: {
+                id: true,
+                img_path: true,
+              },
+            },
+            likes: {
+              select: {
+                user_id: true,
+              },
+            },
+            reposts: {
+              select: {
+                user_id: true,
+              },
+            },
+            _count: {
+              select: {
+                likes: true,
+                comments: true,
+                reposts: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (repostedPosts.length === 0) {
+      return res.status(200).json([]); // ✅ ถ้า user ไม่เคยรีโพสต์เลย ให้ส่ง array ว่างกลับไป
+    }
+
+    const response = repostedPosts.map((repost) => {
+      const post = repost.posts;
+      if (!post) return null;
+
+      const isLiked = post.likes.some((like) => like.user_id === userId);
+      const isReposted = post.reposts.some((repost) => repost.user_id === userId);
+
+      return {
+        post_id: post.post_id.toString(),
+        content: post.content,
+        created_at: post.created_at, // ✅ เวลาที่โพสต์ถูกสร้าง
+        reposted_at: repost.created_at, // ✅ เวลาที่ user รีโพสต์ (ใหม่สุดมาก่อน)
+        username: post.users?.username || 'Unknown',
+        user_id: post.users?.user_id.toString() || null,
+        likeCount: post._count.likes,
+        isLiked,
+        commentCount: post._count.comments,
+        repostCount: post._count.reposts,
+        isReposted,
+        images: post.image.map((img) => ({
+          id: img.id.toString(),
+          url: `${req.protocol}://${req.get('host')}/det/img/image/${img.id}`,
+        })),
+      };
+    }).filter(post => post !== null); // ✅ กรองโพสต์ที่อาจเป็น null ออกไป
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.error("❌ Error fetching reposted posts:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+
 exports.deletePost = async (req, res) => {
   const { post_id } = req.body;
 

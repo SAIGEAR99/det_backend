@@ -2,30 +2,42 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 exports.fetch = async (req, res) => {
-
   const { user_id } = req.body;
 
   if (!user_id) {
-    return res.status(400).json({ error: 'User ID is required' });
+    return res.status(400).json({ error: "User ID is required" });
   }
 
   try {
-  
+    console.log(`🔍 Fetching user with ID: ${user_id}`);
+
     const user = await prisma.users.findUnique({
-      where: { user_id: parseInt(user_id) },  
+      where: { user_id: Number(user_id) },
     });
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      console.log(`User not found for ID: ${user_id}`);
+      return res.status(404).json({ error: "User not found" });
     }
 
-   
-    res.json(user);
+    console.log(`User found: ${JSON.stringify(user)}`);
+
+
+    const followersCount = await prisma.follows.count({
+      where: { following_id: Number(user_id) }, 
+    });
+
+    console.log(`Followers count for user ${user_id}: ${followersCount}`);
+
+  
+    res.json({ ...user, followers_count: followersCount });
   } catch (error) {
-    console.error('Error fetching user:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error("Error fetching user:", error);
+    res.status(500).json({ error: "Internal server error", details: error.message });
   }
 };
+
+
 
 exports.edit_profile = async (req, res) => {
   const { user_id, full_name, bio, link } = req.body;

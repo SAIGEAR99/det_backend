@@ -16,7 +16,7 @@ router.post('/login', authController.login);
 router.post('/register', register.register);
 
 
-router.get('/protected', (req, res) => {
+router.get('/test', (req, res) => {
   res.json({ message: 'test' });
 });
 
@@ -30,6 +30,7 @@ router.get('/img/image/:id', img.image);
 
 router.post('/post/create', authController.verifyToken , post.create);
 router.get('/post/getAllPosts', post.getAllPosts);
+router.get('/post/getAllPosts/repost', post.repost);
 router.post('/post/delete', post.deletePost);
 router.post('/post/report', post.reportPost);
 router.post('/post/like', post.toggleLike);
@@ -49,6 +50,7 @@ router.post('/comment', comment.add_comment);
 router.get('/comment/fetch', comment.fetch_comment);
 
 router.post('/repost', repost.repost);
+
 
 
 
